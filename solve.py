@@ -76,7 +76,7 @@ def solve(mat, remain):
             has = True
             ans[remain] = (i,j)
             nm = copy.deepcopy(mat)
-            op = [[0 for j in range(cols)] for i in range(rows)]
+            op = [[0 for _j in range(cols)] for _i in range(rows)]
             op[i][j] = [1]
             eliminate(nm, op)
             rs = solve(nm, remain-1)
@@ -100,3 +100,4 @@ if __name__ == '__main__':
         print 'usage: %s <input> <count>' % sys.argv[0]
         sys.exit(10)
     sys.exit(main(sys.argv[1], int(sys.argv[2])))
+
