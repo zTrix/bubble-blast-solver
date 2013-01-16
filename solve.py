@@ -24,11 +24,14 @@ def eliminate(mat, ops):
 
     flag = 0
 
-    def add(i, j, d):
+    def add(i, j, b, d):
         if i < rows and i >= 0 and j < cols and j >= 0:
-            new_ops[i][j].append(d)
+            new_ops[i][j].append((b, d))
             return 1
         return 0
+
+    def cmp(a, b):
+        return a[1] > b[1] and 1 or (a[1] < b[1] and -1 or 0)
 
     for i in range(rows):
         for j in range(cols):
@@ -37,17 +40,26 @@ def eliminate(mat, ops):
                     if mat[i][j] > len(ops[i][j]):
                         mat[i][j] -= len(ops[i][j])
                     else:
-                        cnt = len(ops[i][j]) - mat[i][j] + 1
+                        flag += add(i+1, j, 3, 1)
+                        flag += add(i-1, j, 4, 1)
+                        flag += add(i, j+1, 1, 1)
+                        flag += add(i, j-1, 2, 1)
+                        if mat[i][j] == len(ops[i][j]):
+                            mat[i][j] = 0
+                            continue
+                        ops[i][j].sort(cmp = cmp)
+                        k = mat[i][j]
                         mat[i][j] = 0
-                        while cnt:
-                            flag += add(i+1, j, 3)
-                            flag += add(i-1, j, 4)
-                            flag += add(i, j+1, 1)
-                            flag += add(i, j-1, 2)
-                            cnt -= 1
+                        mind = ops[i][j][k-1][1]
+                        while k < len(ops[i][j]):
+                            if ops[i][j][k][1] == mind:
+                                k += 1
+                                continue
+                            flag += add(i + directions[ops[i][j][k][0]][0], j + directions[ops[i][j][k][0]][1], ops[i][j][k][0], ops[i][j][k][1]+1)
+                            k += 1
                 else:
-                    for b in ops[i][j]:
-                        flag += add(i + directions[b][0], j + directions[b][1], b)
+                    for b, d in ops[i][j]:
+                        flag += add(i + directions[b][0], j + directions[b][1], b, d+1)
     if flag:
         eliminate(mat, new_ops)
 
