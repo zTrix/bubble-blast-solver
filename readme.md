@@ -12,3 +12,4 @@ Python 2.7
 ## Note
 - input file format as in.txt, 1 for red, 2 for green, 3 for yellow, 4 for blue
 - output is zero indexed pair sequence, (row, colume), indicating the action sequence
+- actually the particle eliminating logic in the game is buggy, so I have to try the normal logic and buggy logic :(
