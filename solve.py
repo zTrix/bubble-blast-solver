@@ -92,7 +92,10 @@ def main(filepath, cnt):
     f = open(filepath)
     mat = []
     for line in f:
-        mat.append(map(lambda s: int(s), line.strip().split(' ')))
+        line = line.strip()
+        if line.startswith('#'):
+            continue
+        mat.append(map(lambda s: int(s), line.split(' ')))
     if solve(mat, cnt):
         for i in range(cnt, 0, -1):
             print ans[i]
