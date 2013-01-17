@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, copy, Queue
+import os, sys, copy, time
 
 ans = [-99] * 100
 
@@ -13,7 +13,9 @@ def iszero(mat):
 
 directions = [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)]
 
-def eliminate(mat, ops, bug_logic_open = False):
+bug_logic_open = False
+
+def eliminate(mat, ops):
     #print '\n', ops
     #for i in mat:
     #    print i
@@ -65,28 +67,61 @@ def eliminate(mat, ops, bug_logic_open = False):
                     for b, d in ops[i][j]:
                         flag += add(i + directions[b][0], j + directions[b][1], b, d+1)
     if flag:
-        eliminate(mat, new_ops, bug_logic_open)
+        eliminate(mat, new_ops)
 
-def solve(mat, remain, bug_logic_open = False):
+def solve(mat, remain):
     if remain == 0:
         return iszero(mat)
-    has = False
+    nonzero = False
     rows = len(mat)
     cols = len(mat[0])
     for i in range(rows):
         for j in range(cols):
             if mat[i][j] == 0:
                 continue
-            has = True
+            nonzero = True
             ans[remain] = (i,j)
             nm = copy.deepcopy(mat)
             op = [[0 for _j in range(cols)] for _i in range(rows)]
             op[i][j] = [(1,0)]
-            eliminate(nm, op, bug_logic_open)
+            eliminate(nm, op)
             rs = solve(nm, remain-1)
             if rs:
                 return True
-    return not has
+    return not nonzero
+
+def quick_solve(mat, remain):
+    if remain == 0:
+        return iszero(mat)
+    rows = len(mat)
+    cols = len(mat[0])
+    non_red = False
+    nonzero = False
+    if remain > 1:
+        for i in range(rows):
+            for j in range(cols):
+                if mat[i][j] < 2:
+                    continue
+                nonzero = True
+                ans[remain] = (i,j)
+                non_red = True
+                nm = copy.deepcopy(mat)
+                nm[i][j] -= 1
+                if quick_solve(nm, remain-1): return True
+    for i in range(rows):
+        for j in range(cols):
+            if mat[i][j]:
+                nonzero = True
+            if mat[i][j] != 1:
+                continue
+            nonzero = True
+            ans[remain] = (i,j)
+            nm = copy.deepcopy(mat)
+            op = [[0 for _j in range(cols)] for _i in range(rows)]
+            op[i][j] = [(1,0)]
+            eliminate(nm, op)
+            if solve(nm, remain-1): return True
+    return not nonzero
 
 def main(filepath, cnt):
     f = open(filepath)
@@ -96,21 +131,34 @@ def main(filepath, cnt):
         if line.startswith('#'):
             continue
         mat.append(map(lambda s: int(s), line.split(' ')))
+    print >> sys.stderr, 'trying quick solution...'
+    start_time = time.time()
+    if quick_solve(mat, cnt):
+        print >> sys.stderr, 'found solution in %.2fs using quick solution' % (time.time() - start_time)
+        for i in range(cnt, 0, -1):
+            print ans[i]
+        return 0
+    print >> sys.stderr, 'no solution using quick logic(%.2fs), trying brute force' % (time.time() - start_time)
+    start_time = time.time()
     if solve(mat, cnt):
+        print >> sys.stderr, 'found solution in %.2fs using brute force' % (time.time() - start_time)
         for i in range(cnt, 0, -1):
             print ans[i]
         return 0
-    print 'no solutioin under normal logic, trying bug logic...'
-    if solve(mat, cnt, bug_logic_open = True):
+    print >> sys.stderr, 'no solution under normal logic(%.2fs), trying brute force with buggy elimination...' % (time.time() - start_time)
+    start_time = time.time()
+    bug_logic_open = True
+    if solve(mat, cnt):
+        print >> sys.stderr, 'found solution in %.2fs using brute force buggy elimination' % (time.time() - start_time)
         for i in range(cnt, 0, -1):
             print ans[i]
         return 0
-    print 'cannot find solution'
+    print >> sys.stderr, 'cannot find solution (%.2fs)' % (time.time() - start_time)
     return 11
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print 'usage: %s <input> <count>' % sys.argv[0]
+        print >> sys.stderr, 'usage: %s <input> <count>' % sys.argv[0]
         sys.exit(10)
     sys.exit(main(sys.argv[1], int(sys.argv[2])))
 
