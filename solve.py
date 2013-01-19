@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, copy, time
-
-ans = [-99] * 100
+import os, sys, copy, time, threading
 
 def iszero(mat):
     for i in mat:
@@ -112,7 +110,7 @@ def eliminate(mat, ops):
     if flag:
         eliminate(mat, new_ops)
 
-def solve(mat, remain):
+def solve(mat, remain, ans):
     if remain == 0:
         return iszero(mat)
     nonzero = False
@@ -128,12 +126,12 @@ def solve(mat, remain):
             op = [[0 for _j in range(cols)] for _i in range(rows)]
             op[i][j] = [(1,0)]
             eliminate(nm, op)
-            rs = solve(nm, remain-1)
+            rs = solve(nm, remain-1, ans)
             if rs:
                 return True
     return not nonzero
 
-def quick_solve(mat, remain):
+def quick_solve(mat, remain, ans):
     if remain == 0:
         return iszero(mat)
     rows = len(mat)
@@ -150,7 +148,7 @@ def quick_solve(mat, remain):
                 non_red = True
                 nm = copy.deepcopy(mat)
                 nm[i][j] -= 1
-                if quick_solve(nm, remain-1): return True
+                if quick_solve(nm, remain-1, ans): return True
     for i in range(rows):
         for j in range(cols):
             if mat[i][j]:
@@ -161,37 +159,52 @@ def quick_solve(mat, remain):
             ans[remain] = (i,j)
             nm = copy.deepcopy(mat)
             eliminate_simu(nm, [i, j])
-            if solve(nm, remain-1): return True
+            if quick_solve(nm, remain-1, ans): return True
     return not nonzero
 
-def main(filepath, cnt):
-    f = open(filepath)
+solved = False
+
+def run(func, mat, cnt, name):
+    global solved
+    print >> sys.stderr, 'trying %s ...' % name
+    start_time = time.time()
+    ans = [-99] * 10
+    if func(mat, cnt, ans):
+        solved = True
+        print >> sys.stderr, 'found solution in %.2fs using %s solution' % (time.time() - start_time, name)
+        for i in range(cnt, 0, -1):
+            print ans[i]
+        return 0
+    print >> sys.stderr, 'no solution found using %s(%.2fs)' % (name, time.time() - start_time)
+
+def main(mat, cnt):
+    t = threading.Thread(target = run, args = (quick_solve, mat, cnt, 'quick solution'))
+    t.setDaemon(True)
+    t.start()
+
+    t = threading.Thread(target = run, args = (solve, mat, cnt, 'brute-force solution'))
+    t.setDaemon(True)
+    t.start()
+
+    while True:
+        if threading.active_count() == 1:
+            sys.exit(0)
+        if not solved:
+            time.sleep(5)
+        else:
+            time.sleep(3)
+            sys.exit(0)
+
+if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        print >> sys.stderr, 'usage: %s <input> <count>' % sys.argv[0]
+        sys.exit(10)
+    f = open(sys.argv[1], 'r')
     mat = []
     for line in f:
         line = line.strip()
         if line.startswith('#'):
             continue
         mat.append(map(lambda s: int(s), line.split(' ')))
-    print >> sys.stderr, 'trying quick solution...'
-    start_time = time.time()
-    if quick_solve(mat, cnt):
-        print >> sys.stderr, 'found solution in %.2fs using quick solution' % (time.time() - start_time)
-        for i in range(cnt, 0, -1):
-            print ans[i]
-        return 0
-    print >> sys.stderr, 'no solution using quick logic(%.2fs), trying brute force' % (time.time() - start_time)
-    start_time = time.time()
-    if solve(mat, cnt):
-        print >> sys.stderr, 'found solution in %.2fs using brute force' % (time.time() - start_time)
-        for i in range(cnt, 0, -1):
-            print ans[i]
-        return 0
-    print >> sys.stderr, 'no solution under normal logic(%.2fs), trying brute force with buggy elimination...' % (time.time() - start_time)
-    return 11
-
-if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print >> sys.stderr, 'usage: %s <input> <count>' % sys.argv[0]
-        sys.exit(10)
-    sys.exit(main(sys.argv[1], int(sys.argv[2])))
+    main(mat, int(sys.argv[2]))
 
