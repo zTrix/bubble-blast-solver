@@ -15,34 +15,63 @@ directions = [(0, 0), (-1, 0), (0, -1), (1, 0), (0, 1)]
 
 # example: eliminate_simu(mat, [2, 3])
 def eliminate_simu(mat, point):
-    minis = [[point[0], point[1], 1]]
+    minis = []
+
+    ret = []
 
     rows = len(mat)
     cols = len(mat[0])
 
-    def add(i, j, s):
-        if i < rows and i >= 0 and j < cols and j >= 0:
-            minis.append([i, j, s])
+    if mat[point[0]][point[1]]:
+        mat[point[0]][point[1]] -= 1
+        if mat[point[0]][point[1]] == 0:
+            minis.append([point[0]-1, point[1], 1])
+            minis.append([point[0], point[1]-1, 2])
+            minis.append([point[0]+1, point[1], 3])
+            minis.append([point[0], point[1]+1, 4])
+    else:
+        return ret
 
     while len(minis):
+        total = len(minis) - 1
+        for i in range(total, -1, -1):
+            if minis[i][0] < -1:
+                minis[i] = minis[len(minis)-1]
+                minis.pop()
+
+        total = len(minis) - 1
+        for i in range(total, -1, -1):
+            if minis[i][0] >= rows + 1:
+                minis[i] = minis[len(minis)-1]
+                minis.pop()
+
+        total = len(minis) - 1
+        for i in range(total, -1, -1):
+            if minis[i][1] < 0 or minis[i][1] >= cols:
+                minis[i] = minis[len(minis)-1]
+                minis.pop()
+
         total = len(minis)
         for i in range(total):
-            if mat[minis[i][0]][minis[i][1]]:
+            if minis[i][0] >= 0 and minis[i][0] < rows and minis[i][1] >= 0 and minis[i][1] < cols and mat[minis[i][0]][minis[i][1]]:
+                ret.append((minis[i][0], minis[i][1]))
                 mat[minis[i][0]][minis[i][1]] -= 1
                 minis[i][2] = 0
                 if mat[minis[i][0]][minis[i][1]] == 0:
-                    add(minis[i][0]-1, minis[i][1], 1)
-                    add(minis[i][0], minis[i][1]-1, 2)
-                    add(minis[i][0]+1, minis[i][1], 3)
-                    add(minis[i][0], minis[i][1]+1, 4)
+                    minis.append([minis[i][0]-1, minis[i][1], 1])
+                    minis.append([minis[i][0], minis[i][1]-1, 2])
+                    minis.append([minis[i][0]+1, minis[i][1], 3])
+                    minis.append([minis[i][0], minis[i][1]+1, 4])
             else:
-                add(minis[i][0] + directions[minis[i][2]][0], minis[i][1] + directions[minis[i][2]][1], minis[i][2])
-                minis[i][2] = 0
+                minis[i][0] += directions[minis[i][2]][0]
+                minis[i][1] += directions[minis[i][2]][1]
+
         total = len(minis) - 1
         for i in range(total, -1, -1):
             if minis[i][2] == 0:
                 minis[i] = minis[len(minis)-1]
                 minis.pop()
+    return ret
 
 ## example here:
 # op = [[0 for _j in range(cols)] for _i in range(rows)]
