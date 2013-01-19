@@ -163,20 +163,23 @@ def quick_solve(mat, remain, ans):
     return not nonzero
 
 solved = False
-lock = threading.Lock()
+condition = threading.Condition()
 
 def run(func, mat, cnt, name):
-    global solved
+    global solved, condition
+    condition.acquire()
     print >> sys.stderr, 'trying %s ...' % name
+    condition.release()
     start_time = time.time()
     ans = [-99] * 10
     if func(mat, cnt, ans):
-        lock.acquire()
+        condition.acquire()
         solved = True
         print >> sys.stderr, 'found solution in %.2fs using %s solution' % (time.time() - start_time, name)
         for i in range(cnt, 0, -1):
             print ans[i]
-        lock.release()
+        condition.notify()
+        condition.release()
         return 0
     print >> sys.stderr, 'no solution found using %s(%.2fs)' % (name, time.time() - start_time)
 
@@ -190,12 +193,17 @@ def main(mat, cnt):
     t.start()
 
     while True:
+        condition.acquire()
+        condition.wait()
         if threading.active_count() == 1:
             sys.exit(0)
-        if not solved:
-            time.sleep(5)
-        else:
-            time.sleep(3)
+        condition.release()
+        if solved:
+            now = time.time()
+            while threading.active_count() > 1:
+                time.sleep(0.2)
+                if time.time() - now > 4:
+                    break
             sys.exit(0)
 
 if __name__ == '__main__':
