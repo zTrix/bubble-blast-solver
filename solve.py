@@ -11,7 +11,6 @@ def iszero(mat):
 
 directions = [(0, 0), (-1, 0), (0, -1), (1, 0), (0, 1)]
 
-# example: eliminate_simu(mat, [2, 3])
 def eliminate_simu(mat, point):
     minis = []
 
@@ -71,14 +70,16 @@ def eliminate_simu(mat, point):
                 minis.pop()
     return ret
 
-## example here:
-# op = [[0 for _j in range(cols)] for _i in range(rows)]
-# op[i][j] = [(1,0)]
-# eliminate(mat, op)
-
 def eliminate(mat, ops):
     rows = len(mat)
     cols = len(mat[0])
+
+    if len(ops) == 2:
+        i = ops[0]
+        j = ops[1]
+        ops = [[0 for _j in range(cols)] for _i in range(rows)]
+        ops[i][j] = [(1,0)]
+
     new_ops = [[[] for j in range(cols)] for i in range(rows)]
 
     flag = 0
@@ -110,7 +111,7 @@ def eliminate(mat, ops):
     if flag:
         eliminate(mat, new_ops)
 
-def solve(mat, remain, ans):
+def solve(mat, remain, ans, eliminator):
     if remain == 0:
         return iszero(mat)
     nonzero = False
@@ -123,15 +124,13 @@ def solve(mat, remain, ans):
             nonzero = True
             ans[remain] = (i,j)
             nm = copy.deepcopy(mat)
-            op = [[0 for _j in range(cols)] for _i in range(rows)]
-            op[i][j] = [(1,0)]
-            eliminate(nm, op)
-            rs = solve(nm, remain-1, ans)
+            eliminator(nm, [i, j])
+            rs = solve(nm, remain-1, ans, eliminator)
             if rs:
                 return True
     return not nonzero
 
-def quick_solve(mat, remain, ans):
+def quick_solve(mat, remain, ans, eliminator):
     if remain == 0:
         return iszero(mat)
     rows = len(mat)
@@ -148,7 +147,7 @@ def quick_solve(mat, remain, ans):
                 non_red = True
                 nm = copy.deepcopy(mat)
                 nm[i][j] -= 1
-                if quick_solve(nm, remain-1, ans): return True
+                if quick_solve(nm, remain-1, ans, eliminator): return True
     for i in range(rows):
         for j in range(cols):
             if mat[i][j]:
@@ -158,58 +157,37 @@ def quick_solve(mat, remain, ans):
             nonzero = True
             ans[remain] = (i,j)
             nm = copy.deepcopy(mat)
-            eliminate_simu(nm, [i, j])
-            if quick_solve(nm, remain-1, ans): return True
+            eliminator(nm, [i, j])
+            if quick_solve(nm, remain-1, ans, eliminator): return True
     return not nonzero
 
-solved = False
-condition = threading.Condition()
+def main(mat, cnt, options):
+    
+    solver = options['bruteforce'] and solve or quick_solve
+    eliminator = options['android'] and eliminate_simu or eliminate
 
-def run(func, mat, cnt, name):
-    global solved, condition
-    condition.acquire()
-    print >> sys.stderr, 'trying %s ...' % name
-    condition.release()
     start_time = time.time()
     ans = [-99] * 10
-    if func(mat, cnt, ans):
-        condition.acquire()
-        solved = True
-        print >> sys.stderr, 'found solution in %.2fs using %s solution' % (time.time() - start_time, name)
+    if solver(mat, cnt, ans, eliminator):
+        print >> sys.stderr, 'found solution in %.2fs' % (time.time() - start_time)
         for i in range(cnt, 0, -1):
             print ans[i]
-        condition.notify()
-        condition.release()
-        return 0
-    print >> sys.stderr, 'no solution found using %s(%.2fs)' % (name, time.time() - start_time)
-
-def main(mat, cnt):
-    t = threading.Thread(target = run, args = (quick_solve, mat, cnt, 'quick solution'))
-    t.setDaemon(True)
-    t.start()
-
-    t = threading.Thread(target = run, args = (solve, mat, cnt, 'brute-force solution'))
-    t.setDaemon(True)
-    t.start()
-
-    while True:
-        condition.acquire()
-        condition.wait()
-        if threading.active_count() == 1:
-            sys.exit(0)
-        condition.release()
-        if solved:
-            now = time.time()
-            while threading.active_count() > 1:
-                time.sleep(0.2)
-                if time.time() - now > 4:
-                    break
-            sys.exit(0)
+    else:
+        print 'no solution found'
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print >> sys.stderr, 'usage: %s <input> <count>' % sys.argv[0]
+        print >> sys.stderr, 'usage: %s <input> <count> [-a(for android)] [-b(brute force search)]' % sys.argv[0]
         sys.exit(10)
+    options = {
+        'android': False,
+        'bruteforce': False
+    }
+    for p in sys.argv[3:]:
+        if p == '-a':
+            options['android'] = True
+        elif p == '-b':
+            options['bruteforce'] = True
     f = open(sys.argv[1], 'r')
     mat = []
     for line in f:
@@ -217,5 +195,5 @@ if __name__ == '__main__':
         if line.startswith('#'):
             continue
         mat.append(map(lambda s: int(s), line.split(' ')))
-    main(mat, int(sys.argv[2]))
+    main(mat, int(sys.argv[2]), options)
 
