@@ -11,6 +11,30 @@ def iszero(mat):
 
 directions = [(0, 0), (-1, 0), (0, -1), (1, 0), (0, 1)]
 
+def eliminate(mat, point):
+    rows = len(mat)
+    cols = len(mat[0])
+    minis = [[point[0], point[1], 1]]
+    while len(minis):
+        total = len(minis)
+        for i in range(total):
+            if mat[minis[i][0]][minis[i][1]]:
+                mat[minis[i][0]][minis[i][1]] -= 1
+                minis[i][2] = 0
+                if mat[minis[i][0]][minis[i][1]] == 0:
+                    minis.append([minis[i][0]-1, minis[i][1], 1])
+                    minis.append([minis[i][0], minis[i][1]-1, 2])
+                    minis.append([minis[i][0]+1, minis[i][1], 3])
+                    minis.append([minis[i][0], minis[i][1]+1, 4])
+            else:
+                minis[i][0] += directions[minis[i][2]][0]
+                minis[i][1] += directions[minis[i][2]][1]
+        total = len(minis) - 1
+        for i in range(total, -1, -1):
+            if minis[i][2] == 0 or minis[i][0] < 0 or minis[i][0] >= rows or minis[i][1] < 0 or minis[i][1] >= cols:
+                minis[i] = minis[len(minis)-1]
+                minis.pop()
+
 def eliminate_simu(mat, point):
     minis = []
 
@@ -69,47 +93,6 @@ def eliminate_simu(mat, point):
                 minis[i] = minis[len(minis)-1]
                 minis.pop()
     return ret
-
-def eliminate(mat, ops):
-    rows = len(mat)
-    cols = len(mat[0])
-
-    if len(ops) == 2:
-        i = ops[0]
-        j = ops[1]
-        ops = [[0 for _j in range(cols)] for _i in range(rows)]
-        ops[i][j] = [(1,0)]
-
-    new_ops = [[[] for j in range(cols)] for i in range(rows)]
-
-    flag = 0
-
-    def add(i, j, b, d):
-        if i < rows and i >= 0 and j < cols and j >= 0:
-            new_ops[i][j].append((b, d))
-            return 1
-        return 0
-
-    def cmp(a, b):
-        return a[1] > b[1] and 1 or (a[1] < b[1] and -1 or 0)
-
-    for i in range(rows):
-        for j in range(cols):
-            if ops[i][j]:
-                if mat[i][j]:
-                    if mat[i][j] > len(ops[i][j]):
-                        mat[i][j] -= len(ops[i][j])
-                    else:
-                        flag += add(i+1, j, 3, 1)
-                        flag += add(i-1, j, 1, 1)
-                        flag += add(i, j+1, 4, 1)
-                        flag += add(i, j-1, 2, 1)
-                        mat[i][j] = 0
-                else:
-                    for b, d in ops[i][j]:
-                        flag += add(i + directions[b][0], j + directions[b][1], b, d+1)
-    if flag:
-        eliminate(mat, new_ops)
 
 def solve(mat, remain, ans, eliminator):
     if remain == 0:
