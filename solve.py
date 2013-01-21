@@ -16,6 +16,7 @@ def eliminate(mat, point):
     cols = len(mat[0])
     minis = [[point[0], point[1], 1]]
     while len(minis):
+        hit = [[0 for _j in range(cols)] for _i in range(rows)]
         total = len(minis)
         for i in range(total):
             if mat[minis[i][0]][minis[i][1]]:
@@ -26,6 +27,9 @@ def eliminate(mat, point):
                     minis.append([minis[i][0], minis[i][1]-1, 2])
                     minis.append([minis[i][0]+1, minis[i][1], 3])
                     minis.append([minis[i][0], minis[i][1]+1, 4])
+                    hit[minis[i][0]][minis[i][1]] = 1
+            elif hit[minis[i][0]][minis[i][1]]:
+                minis[i][2] = 0
             else:
                 minis[i][0] += directions[minis[i][2]][0]
                 minis[i][1] += directions[minis[i][2]][1]
