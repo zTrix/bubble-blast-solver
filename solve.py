@@ -98,7 +98,7 @@ def eliminate_simu(mat, point):
                 minis.pop()
     return ret
 
-def preprocess(mat):
+def preprocess(mat, remain, ans):
     rows = len(mat)
     cols = len(mat[0])
     rowcnt = [0] * rows
@@ -114,7 +114,7 @@ def preprocess(mat):
             if mat[i][j] > rowcnt[i] + colcnt[j] - 2:
                 delta = mat[i][j] + 2 - rowcnt[i] - colcnt[j]
                 for k in range(delta):
-                    print '(%d, %d)' % (i, j)
+                    ans[remain-k] = (i, j)
                 ret += delta
                 mat[i][j] = rowcnt[i] + colcnt[j] - 2
     return ret
@@ -122,6 +122,9 @@ def preprocess(mat):
 def solve(mat, remain, ans, eliminator):
     if remain == 0:
         return iszero(mat)
+
+    remain -= preprocess(mat, remain, ans)
+
     nonzero = False
     rows = len(mat)
     cols = len(mat[0])
@@ -141,6 +144,9 @@ def solve(mat, remain, ans, eliminator):
 def quick_solve(mat, remain, ans, eliminator):
     if remain == 0:
         return iszero(mat)
+
+    remain -= preprocess(mat, remain, ans)
+
     rows = len(mat)
     cols = len(mat[0])
     non_red = False
@@ -171,8 +177,6 @@ def quick_solve(mat, remain, ans, eliminator):
 
 def main(mat, cnt, options):
     
-    cnt -= preprocess(mat)
-
     solver = options['bruteforce'] and solve or quick_solve
     eliminator = options['android'] and eliminate_simu or eliminate
 
