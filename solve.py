@@ -183,7 +183,7 @@ def main(mat, cnt, options):
             print ans[i]
         print >> sys.stderr, 'found solution in %.2fs' % (time.time() - start_time)
     else:
-        print 'no solution found'
+        print 'no solution found in %.2fs' % (time.time() - start_time)
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
