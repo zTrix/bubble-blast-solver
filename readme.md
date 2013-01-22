@@ -34,3 +34,5 @@ So I wrote 2 elimination logic, one for normal version, and one for android spec
 ## Note
 - input file format just as ./levels/*.txt, 1 for red, 2 for green, 3 for yellow, 4 for blue
 - output is zero indexed pair sequence, (row, colume), indicating the action sequence
+- To speedup, pypy is highly recommended, with more than 5 times faster in average.
+
