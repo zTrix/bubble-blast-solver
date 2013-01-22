@@ -98,6 +98,27 @@ def eliminate_simu(mat, point):
                 minis.pop()
     return ret
 
+def preprocess(mat):
+    rows = len(mat)
+    cols = len(mat[0])
+    rowcnt = [0] * rows
+    colcnt = [0] * cols
+    for i in range(rows):
+        for j in range(cols):
+            rowcnt[i] += mat[i][j] and 1 or 0
+            colcnt[j] += mat[i][j] and 1 or 0
+    ret = 0
+    for i in range(rows):
+        for j in range(cols):
+            if mat[i][j] == 0: continue
+            if mat[i][j] > rowcnt[i] + colcnt[j] - 2:
+                delta = mat[i][j] + 2 - rowcnt[i] - colcnt[j]
+                for k in range(delta):
+                    print '(%d, %d)' % (i, j)
+                ret += delta
+                mat[i][j] = rowcnt[i] + colcnt[j] - 2
+    return ret
+
 def solve(mat, remain, ans, eliminator):
     if remain == 0:
         return iszero(mat)
@@ -150,15 +171,17 @@ def quick_solve(mat, remain, ans, eliminator):
 
 def main(mat, cnt, options):
     
+    cnt -= preprocess(mat)
+
     solver = options['bruteforce'] and solve or quick_solve
     eliminator = options['android'] and eliminate_simu or eliminate
 
     start_time = time.time()
     ans = [-99] * 10
     if solver(mat, cnt, ans, eliminator):
-        print >> sys.stderr, 'found solution in %.2fs' % (time.time() - start_time)
         for i in range(cnt, 0, -1):
             print ans[i]
+        print >> sys.stderr, 'found solution in %.2fs' % (time.time() - start_time)
     else:
         print 'no solution found'
 
