@@ -205,14 +205,26 @@ def main(mat, cnt, options):
     else:
         print 'no solution found in %.2fs' % (time.time() - start_time)
 
+def usage():
+    print >> sys.stderr, 'usage: %s <input> <count> [--np] [-a] [-b]' % sys.argv[0]
+    print >> sys.stderr, 'options:'
+    print >> sys.stderr, '     -a: switch on special elimination logic for android'
+    print >> sys.stderr, '     -b: switch on brute force search'
+    print >> sys.stderr, '   --np: switch off preprocess strategy'
+    return 10
+
 if __name__ == '__main__':
+    touch_max = 0
+    if len(sys.argv) < 2:
+        sys.exit(usage())
     if len(sys.argv) < 3:
-        print >> sys.stderr, 'usage: %s <input> <count> [--np] [-a] [-b]' % sys.argv[0]
-        print >> sys.stderr, 'options:'
-        print >> sys.stderr, '     -a: switch on special elimination logic for android'
-        print >> sys.stderr, '     -b: switch on brute force search'
-        print >> sys.stderr, '   --np: switch off preprocess strategy'
-        sys.exit(10)
+        touch_max = int(open(sys.argv[1], 'r').readline().split('#')[1].strip())
+    else:
+        touch_max = int(sys.argv[2])
+    if touch_max <= 0:
+        sys.exit(usage())
+    else:
+        print 'touch max = %d' % touch_max
     options = {
         'android': False,
         'bruteforce': False,
@@ -232,5 +244,5 @@ if __name__ == '__main__':
         if line.startswith('#'):
             continue
         mat.append(map(lambda s: int(s), line.split(' ')))
-    main(mat, int(sys.argv[2]), options)
+    main(mat, touch_max, options)
 
